@@ -14,7 +14,8 @@ import datetime
 import getToken
 
 class TrackerGlobal:
-    streakLength = 30 # in minutes
+    streakLength = 22 # in minutes
+    minimumStreakLength = 60 # in minutes
     def __init__(self):
         self.trackers = []
 
@@ -83,7 +84,15 @@ class TrackerUser:
                 dif = streakLast - streakBeg
                 link1 = self.messageList[streakBeg]
                 link2 = self.messageList[streakLast]
-                finalString += f"Streak that from {streakBeg.strftime("%d/%m/%Y")} lasted {(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d} from {link1} to {link2}\n"
+
+                streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
+                durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
+                amountXP = (dif.seconds // 60) // TrackerGlobal.minimumStreakLength
+
+                information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
+                commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
+
+                finalString += f"{information} {commandLink}"
 
                 streakBeg = msgTime
                 streakLast = msgTime
@@ -92,7 +101,15 @@ class TrackerUser:
         dif = streakLast - streakBeg
         link1 = self.messageList[streakBeg]
         link2 = self.messageList[streakLast]
-        finalString += f"Streak that from {streakBeg.strftime("%d/%m/%Y")} lasted {(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d} from {link1} to {link2}\n"
+
+        streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
+        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
+        amountXP = (dif.seconds // 60) // TrackerGlobal.minimumStreakLength
+
+        information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
+        commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
+
+        finalString += f"{information} {commandLink}"
 
         return finalString
 
