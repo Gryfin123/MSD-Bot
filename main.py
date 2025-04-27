@@ -5,12 +5,13 @@ To do:
 - wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
 - Liczenie Streaków na bierząco
 - kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień)
-- 
+- na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
 
 
 '''
 import discord
 import datetime
+import getToken
 
 class TrackerGlobal:
     streakLength = 30 # in minutes
@@ -136,4 +137,5 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = MyClient(intents=intents)
-client.run('[token]')
+token = getToken.GetToken()
+client.run(token)

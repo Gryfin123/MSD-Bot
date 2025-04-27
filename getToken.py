@@ -1,0 +1,2 @@
+def GetToken():
+    return "[token]"
