@@ -1,12 +1,13 @@
 '''
 To do:
 - Blacklistowanie kanałów
-- podział na serwery
 - wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
 - Liczenie Streaków na bierząco
 - kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień) - komenda na kasowanie
 - na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
 
+Done:
+- podział na serwery
 
 '''
 import discord
@@ -152,7 +153,7 @@ class TrackerUser:
 
 
 # Process
-print("I start!")
+print("Booting up bot!")
 
 class MyClient(discord.Client):
     globalTracker = TrackerGlobal()
@@ -160,8 +161,8 @@ class MyClient(discord.Client):
         print('Logged on as', self.user)
 
     async def on_message(self, message):
-        # don't respond to ourselves
-        if message.author == self.user:
+        # don't respond to ourselves and other bots
+        if (message.author == self.user or message.author.bot == True):
             return
 
         elif message.content == "Angelotron raport":
