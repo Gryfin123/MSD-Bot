@@ -4,7 +4,7 @@ To do:
 - podział na serwery
 - wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
 - Liczenie Streaków na bierząco
-- kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień)
+- kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień) - komenda na kasowanie
 - na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
 
 
@@ -14,13 +14,43 @@ import datetime
 import getToken
 
 class TrackerGlobal:
-    streakLength = 22 # in minutes
-    minimumStreakLength = 60 # in minutes
     def __init__(self):
-        self.trackers = []
+        self.serverTrackers = []
+        
+    def findServer(self, serverId):
+        for x in self.serverTrackers:
+            if x.serverId == serverId:
+                return x
+        return False
+
+    def NoteMessage(self, message):
+        result = self.findServer(message.guild.id)
+        if result == False:
+            # Add new user tracker
+            print(f"Registring first message on {message.guild.name} (Guild)")
+            newTracker = TrackerServer(message.guild.id)
+            self.serverTrackers.append(newTracker)
+            newTracker.NoteMessage(message)
+        else:
+            # Add message to existing tracker
+            result.NoteMessage(message)
+
+    def RequestRaport(self, server, user):
+        result = self.findServer(server.id)
+        if result == False:
+            return f"There are no noted messages sent by {user.global_name} in {server.name}"
+        else:
+            return result.RequestRaport(user)
+
+class TrackerServer:
+    def __init__(self, serverId):
+        self.serverId = serverId
+        self.userTrackers = []
+        self.streakLength = 22 # in minutes
+        self.minimumStreakLength = 60 # in minutes
 
     def findUser(self, userId):
-        for x in self.trackers:
+        for x in self.userTrackers:
             if x.userId == userId:
                 return x
         return False
@@ -29,9 +59,9 @@ class TrackerGlobal:
         result = self.findUser(message.author.id)
         if result == False:
             # Add new user tracker
-            print(f"Registring first message of {message.author}")
+            print(f"Registring first message of {message.author} on {message.guild}")
             newTracker = TrackerUser(message.author.id)
-            self.trackers.append(newTracker)
+            self.userTrackers.append(newTracker)
             newTracker.AddMessage(message)
         else:
             # Add message to existing tracker
@@ -42,13 +72,7 @@ class TrackerGlobal:
         if result == False:
             return f"There are no noted messages sent by {user.global_name}"
         else:
-            return result.GetRaport(self.streakLength)
-
-class TrackerServer:
-    pass
-
-
-
+            return result.GetRaport(self.streakLength, self.minimumStreakLength)
 
 class TrackerUser:
     def __init__(self, userId):
@@ -59,7 +83,7 @@ class TrackerUser:
         self.messageList[message.created_at] = message.jump_url
         print(f"Noted message with link ({message.jump_url}) and timestamp ({message.created_at})")
 
-    def GetRaport(self, streakLength):
+    def GetRaport(self, streakLength, minLength):
         finalString = ""
 
         streakBeg = False
@@ -87,7 +111,7 @@ class TrackerUser:
 
                 streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
                 durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
-                amountXP = (dif.seconds // 60) // TrackerGlobal.minimumStreakLength
+                amountXP = (dif.seconds // 60) // minLength
 
                 information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
                 commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
@@ -104,7 +128,7 @@ class TrackerUser:
 
         streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
         durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
-        amountXP = (dif.seconds // 60) // TrackerGlobal.minimumStreakLength
+        amountXP = (dif.seconds // 60) // minLength
 
         information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
         commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
@@ -141,7 +165,7 @@ class MyClient(discord.Client):
             return
 
         elif message.content == "Angelotron raport":
-            text = self.globalTracker.RequestRaport(message.author)
+            text = self.globalTracker.RequestRaport(message.guild, message.author)
             await message.channel.send(text)
 
         else:
