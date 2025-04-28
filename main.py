@@ -10,6 +10,7 @@ Done:
 - wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
 - komenda na kasowanie przeszłych zapisków.
 '''
+import inspect
 import discord
 import datetime
 import getToken
@@ -28,9 +29,7 @@ class TrackerGlobal:
         result = self.findServer(message.guild.id)
         if result == False:
             # Add new user tracker
-            print(f"Registring first message on {message.guild.name} (Guild)")
-            newTracker = TrackerServer(message.guild.id)
-            self.serverTrackers.append(newTracker)
+            newTracker = self.RegisterNewTracker(message.guild)
             newTracker.NoteMessage(message)
         else:
             # Add message to existing tracker
@@ -50,12 +49,24 @@ class TrackerGlobal:
         else:
             return result.CleanList(user)
 
+    def RegisterNewTracker(self, server):
+        print(f"Registring new Server Tracker for {server.name} (Guild)")
+        newTracker = TrackerServer(server.id)
+        self.serverTrackers.append(newTracker)
+        return newTracker
+
+    def UpdateListenList(self, server, category):
+        result = self.findServer(server.id)
+        if result == False:
+            result = self.RegisterNewTracker(server)
+        
+        return result.ToggleListeningCategory(category)
+
 class TrackerServer:
     def __init__(self, serverId):
         self.serverId = serverId
         self.userTrackers = []
-        self.streakLength = 22 # in minutes
-        self.minimumStreakLength = 60 # in minutes
+        self.listeningCategoryList = []
 
     def findUser(self, userId):
         for x in self.userTrackers:
@@ -64,10 +75,21 @@ class TrackerServer:
         return False
 
     def NoteMessage(self, message):
+        # Check if bot should listen to message's channel
+        # Check only if there are any categories selected
+        if len(self.listeningCategoryList) > 0:
+            channelPresent = False
+            for x in self.listeningCategoryList:
+                if message.channel.category.id == x.id:
+                    channelPresent = True
+            if channelPresent == False:
+                print(f"{message.author} has sent a message, which is ignore due to listening rule.")
+                return # If category is not on the list, ignore message
+
+        # If bot is allowed to listen to that category, process message
         result = self.findUser(message.author.id)
         if result == False:
             # Add new user tracker
-            print(f"Registring first message of {message.author} on {message.guild}")
             newTracker = TrackerUser(message.author.id)
             self.userTrackers.append(newTracker)
             newTracker.AddMessage(message)
@@ -80,7 +102,7 @@ class TrackerServer:
         if result == False:
             return f"There are no noted messages sent by {user.global_name}"
         else:
-            return result.GetRaport(self.streakLength, self.minimumStreakLength)
+            return result.GetRaport()
         
     def CleanList(self, user):
         result = self.findUser(user.id)
@@ -89,63 +111,82 @@ class TrackerServer:
         else:
             self.userTrackers.remove(result)
             return f"Past streaks have been removed."
+        
+    def ToggleListeningCategory(self, category):
+        for x in self.listeningCategoryList:
+            if category.id == x.id:
+                self.listeningCategoryList.remove(x)
+                return f"Now I won't be listening to channels from category \"{x.name}\"."
+        
+        self.listeningCategoryList.append(category)
+        return f"Now I will be listening to channels from category \"{category.name}\"."
+
 
 class TrackerUser:
     def __init__(self, userId):
         self.userId = userId
-        self.messageList = {}
+        self.streakList = []
 
     def AddMessage(self, message):
-        self.messageList[message.created_at] = message.jump_url
-        print(f"Noted message with link ({message.jump_url}) and timestamp ({message.created_at})")
+        # If there is no streak in list, add message
+        if len(self.streakList) == 0:
+            newStreak = Streak(message.created_at, message.jump_url)
+            self.streakList.append(newStreak)
+        # If there is at least one streak in the list
+        else:
+            latestStreak = self.streakList[-1]
+            # Check if the curernt streak is ongoing
+            if latestStreak.IsOngoing(message.created_at) == True:
+                # If so, update the last time
+                latestStreak.ExtendStreak(message.created_at, message.jump_url)
+            else:
+                # If not, create new one.
+                newStreak = Streak(message.created_at, message.jump_url)
+                self.streakList.append(newStreak)
 
-    def PrepareStreakMessage(self, streakLast, streakBeg, minLength):
-        dif = streakLast - streakBeg
-        link1 = self.messageList[streakBeg]
-        link2 = self.messageList[streakLast]
-
-        streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
-        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
-        amountXP = (dif.seconds // 60) // minLength
-
-        information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
-        commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
-
-        return f"{information} {commandLink}"
+        print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
     
-    def GetRaport(self, streakLength, minLength):
+    def GetRaport(self):
         finalString = ""
 
-        streakBeg = False
-        streakLast = False
-
-        for msgTime in self.messageList:
-            # If it's first list element
-            if streakBeg == False:
-                streakBeg = msgTime   
-                streakLast = msgTime
-                continue
-
-            # Check if time between last msg and current is lesser then streak length
-            if streakLast + datetime.timedelta(minutes=streakLength) > msgTime:
-                # If so, update streakLast and go to next message
-                streakLast = msgTime
-                continue
-            else:
-                # If not, check how much time passed between streakBeg and streakLast, 
-                #  prepare and append final string 
-                #  and set streakBeg to this message.
-                finalString += self.PrepareStreakMessage(streakLast, streakBeg, minLength)
-
-                streakBeg = msgTime
-                streakLast = msgTime
+        for streak in self.streakList:
+            finalString += streak.PrintRaport()
 
         # when all messages have been checked, close the last
-        finalString += self.PrepareStreakMessage(streakLast, streakBeg, minLength)
         return finalString
         
 
 
+class Streak:
+    def __init__(self, begTime, begMsgLink):
+        self.beginTime = begTime
+        self.lastTime = begTime
+        self.begMsgLink = begMsgLink
+        self.lastMsgLink = begMsgLink
+
+    # Check if streak is ongoing
+    def IsOngoing(self, currTime):
+        # Check if time between last msg and current is lesser then streak length
+        return self.lastTime + datetime.timedelta(minutes=STREAK_LENGTH) > currTime
+        
+    # Update latest msg data
+    def ExtendStreak(self, newTime, newLink):
+        self.lastTime = newTime
+        self.lastMsgLink = newLink
+
+    # Present data as string
+    def PrintRaport(self):
+        dif = self.lastTime - self.beginTime
+
+        streakStartString = self.beginTime.strftime("%d/%m/%Y %H:%M:%S")
+        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
+        xpReward = (dif.seconds // 60) // STREAK_TRESHOLD * XP_PER_TRESHOLD
+
+        finalString = f"Streak found: {streakStartString} lasted {durationString} from {self.begMsgLink} to {self.lastMsgLink}"
+        if xpReward > 0:
+            finalString += f"\nCommand: ```!xp +{xpReward} (RP: From {self.begMsgLink} to {self.lastMsgLink}, during {durationString})```"
+
+        return finalString
 
 
 
@@ -160,8 +201,7 @@ class TrackerUser:
 
 
 
-# Process
-print("Booting up bot!")
+
 
 class MyClient(discord.Client):
     globalTracker = TrackerGlobal()
@@ -172,6 +212,14 @@ class MyClient(discord.Client):
         # don't respond to ourselves and other bots
         if (message.author == self.user or message.author.bot == True):
             return
+        
+        elif message.content == "Angleotron help" or message.content == "Ang help":
+            reply = inspect.cleandoc("""> Angleotron is a bot that takes notes on all messages sent by users in form of streaks, that user can later read.
+            > Currently implemented are following commands:
+            > - `Angleotron raport`/`Ang raport` - presents all past streaks
+            > - `Angleotron clean`/`Ang clean` - removes all past streaks
+            > - `Angleotron listen`/`Ang listen` - makes the bot listen only to channels in specific category. If none is selected, listens to all of them.""")
+            await message.channel.send(reply)
 
         elif message.content == "Angleotron raport" or message.content == "Ang raport":
             reply = self.globalTracker.RequestRaport(message.guild, message.author)
@@ -181,11 +229,20 @@ class MyClient(discord.Client):
             reply = self.globalTracker.CleanList(message.guild, message.author)
             await message.channel.send(reply)
 
+        elif message.content == "Angleotron listen" or message.content == "Ang listen":
+            reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
+            await message.channel.send(reply)
+
         else: 
             # Note users message.
-            print(f"{message.author} has sent a message.")
             self.globalTracker.NoteMessage(message)
 
+
+# Process
+print("Booting up bot!")
+STREAK_LENGTH = 22 # in minutes
+STREAK_TRESHOLD = 60 # in minutes
+XP_PER_TRESHOLD = 100 # in minutes
 
 intents = discord.Intents.default()
 intents.message_content = True
