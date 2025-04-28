@@ -29,9 +29,7 @@ class TrackerGlobal:
         result = self.findServer(message.guild.id)
         if result == False:
             # Add new user tracker
-            print(f"Registring first message on {message.guild.name} (Guild)")
-            newTracker = TrackerServer(message.guild.id)
-            self.serverTrackers.append(newTracker)
+            newTracker = self.RegisterNewTracker(message.guild)
             newTracker.NoteMessage(message)
         else:
             # Add message to existing tracker
@@ -51,10 +49,24 @@ class TrackerGlobal:
         else:
             return result.CleanList(user)
 
+    def RegisterNewTracker(self, server):
+        print(f"Registring new Server Tracker for {server.name} (Guild)")
+        newTracker = TrackerServer(server.id)
+        self.serverTrackers.append(newTracker)
+        return newTracker
+
+    def UpdateListenList(self, server, category):
+        result = self.findServer(server.id)
+        if result == False:
+            result = self.RegisterNewTracker(server)
+        
+        return result.ToggleListeningCategory(category)
+
 class TrackerServer:
     def __init__(self, serverId):
         self.serverId = serverId
         self.userTrackers = []
+        self.listeningCategoryList = []
 
     def findUser(self, userId):
         for x in self.userTrackers:
@@ -63,10 +75,21 @@ class TrackerServer:
         return False
 
     def NoteMessage(self, message):
+        # Check if bot should listen to message's channel
+        # Check only if there are any categories selected
+        if len(self.listeningCategoryList) > 0:
+            channelPresent = False
+            for x in self.listeningCategoryList:
+                if message.channel.category.id == x.id:
+                    channelPresent = True
+            if channelPresent == False:
+                print(f"{message.author} has sent a message, which is ignore due to listening rule.")
+                return # If category is not on the list, ignore message
+
+        # If bot is allowed to listen to that category, process message
         result = self.findUser(message.author.id)
         if result == False:
             # Add new user tracker
-            print(f"Registring first message of {message.author} on {message.guild}")
             newTracker = TrackerUser(message.author.id)
             self.userTrackers.append(newTracker)
             newTracker.AddMessage(message)
@@ -88,6 +111,16 @@ class TrackerServer:
         else:
             self.userTrackers.remove(result)
             return f"Past streaks have been removed."
+        
+    def ToggleListeningCategory(self, category):
+        for x in self.listeningCategoryList:
+            if category.id == x.id:
+                self.listeningCategoryList.remove(x)
+                return f"Now I won't be listening to channels from category \"{x.name}\"."
+        
+        self.listeningCategoryList.append(category)
+        return f"Now I will be listening to channels from category \"{category.name}\"."
+
 
 class TrackerUser:
     def __init__(self, userId):
@@ -111,7 +144,7 @@ class TrackerUser:
                 newStreak = Streak(message.created_at, message.jump_url)
                 self.streakList.append(newStreak)
 
-        print(f"\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
+        print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
     
     def GetRaport(self):
         finalString = ""
@@ -122,6 +155,7 @@ class TrackerUser:
         # when all messages have been checked, close the last
         return finalString
         
+
 
 class Streak:
     def __init__(self, begTime, begMsgLink):
@@ -184,7 +218,7 @@ class MyClient(discord.Client):
             > Currently implemented are following commands:
             > - `Angleotron raport`/`Ang raport` - presents all past streaks
             > - `Angleotron clean`/`Ang clean` - removes all past streaks
-            > - `Angleotron ignore`/`Ang ignore` - removes channel where it is used on from survailence""")
+            > - `Angleotron listen`/`Ang listen` - makes the bot listen only to channels in specific category. If none is selected, listens to all of them.""")
             await message.channel.send(reply)
 
         elif message.content == "Angleotron raport" or message.content == "Ang raport":
@@ -195,13 +229,12 @@ class MyClient(discord.Client):
             reply = self.globalTracker.CleanList(message.guild, message.author)
             await message.channel.send(reply)
 
-        elif message.content == "Angleotron ignore" or message.content == "Ang ignore":
-            reply = "not implemented"
+        elif message.content == "Angleotron listen" or message.content == "Ang listen":
+            reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
             await message.channel.send(reply)
 
         else: 
             # Note users message.
-            print(f"{message.author} has sent a message.")
             self.globalTracker.NoteMessage(message)
 
 
