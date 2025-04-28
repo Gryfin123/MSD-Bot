@@ -10,6 +10,7 @@ Done:
 - wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
 - komenda na kasowanie przeszłych zapisków.
 '''
+import inspect
 import discord
 import datetime
 import getToken
@@ -177,6 +178,14 @@ class MyClient(discord.Client):
         # don't respond to ourselves and other bots
         if (message.author == self.user or message.author.bot == True):
             return
+        
+        elif message.content == "Angleotron help" or message.content == "Ang help":
+            reply = inspect.cleandoc("""> Angleotron is a bot that takes notes on all messages sent by users in form of streaks, that user can later read.
+            > Currently implemented are following commands:
+            > - `Angleotron raport`/`Ang raport` - presents all past streaks
+            > - `Angleotron clean`/`Ang clean` - removes all past streaks
+            > - `Angleotron ignore`/`Ang ignore` - removes channel where it is used on from survailence""")
+            await message.channel.send(reply)
 
         elif message.content == "Angleotron raport" or message.content == "Ang raport":
             reply = self.globalTracker.RequestRaport(message.guild, message.author)
@@ -184,6 +193,10 @@ class MyClient(discord.Client):
 
         elif message.content == "Angleotron clean" or message.content == "Ang clean":
             reply = self.globalTracker.CleanList(message.guild, message.author)
+            await message.channel.send(reply)
+
+        elif message.content == "Angleotron ignore" or message.content == "Ang ignore":
+            reply = "not implemented"
             await message.channel.send(reply)
 
         else: 
