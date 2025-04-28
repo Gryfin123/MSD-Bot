@@ -99,6 +99,20 @@ class TrackerUser:
         self.messageList[message.created_at] = message.jump_url
         print(f"Noted message with link ({message.jump_url}) and timestamp ({message.created_at})")
 
+    def PrepareStreakMessage(self, streakLast, streakBeg, minLength):
+        dif = streakLast - streakBeg
+        link1 = self.messageList[streakBeg]
+        link2 = self.messageList[streakLast]
+
+        streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
+        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
+        amountXP = (dif.seconds // 60) // minLength
+
+        information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
+        commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
+
+        return f"{information} {commandLink}"
+    
     def GetRaport(self, streakLength, minLength):
         finalString = ""
 
@@ -121,37 +135,16 @@ class TrackerUser:
                 # If not, check how much time passed between streakBeg and streakLast, 
                 #  prepare and append final string 
                 #  and set streakBeg to this message.
-                dif = streakLast - streakBeg
-                link1 = self.messageList[streakBeg]
-                link2 = self.messageList[streakLast]
-
-                streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
-                durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
-                amountXP = (dif.seconds // 60) // minLength
-
-                information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
-                commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
-
-                finalString += f"{information} {commandLink}"
+                finalString += self.PrepareStreakMessage(streakLast, streakBeg, minLength)
 
                 streakBeg = msgTime
                 streakLast = msgTime
 
-        # when all messages have been checked, close the last -
-        dif = streakLast - streakBeg
-        link1 = self.messageList[streakBeg]
-        link2 = self.messageList[streakLast]
-
-        streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
-        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
-        amountXP = (dif.seconds // 60) // minLength
-
-        information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
-        commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
-
-        finalString += f"{information} {commandLink}"
-
+        # when all messages have been checked, close the last
+        finalString += self.PrepareStreakMessage(streakLast, streakBeg, minLength)
         return finalString
+        
+
 
 
 
@@ -180,11 +173,11 @@ class MyClient(discord.Client):
         if (message.author == self.user or message.author.bot == True):
             return
 
-        elif message.content == "Angleotron raport" or "Ang raport":
+        elif message.content == "Angleotron raport" or message.content == "Ang raport":
             reply = self.globalTracker.RequestRaport(message.guild, message.author)
             await message.channel.send(reply)
 
-        elif message.content == "Angleotron clean" or "Ang clean":
+        elif message.content == "Angleotron clean" or message.content == "Ang clean":
             reply = self.globalTracker.CleanList(message.guild, message.author)
             await message.channel.send(reply)
 
