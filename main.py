@@ -1,14 +1,14 @@
 '''
 To do:
 - Blacklistowanie kanałów
-- wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
 - Liczenie Streaków na bierząco
-- kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień) - komenda na kasowanie
+- kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień)
 - na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
 
 Done:
 - podział na serwery
-
+- wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
+- komenda na kasowanie przeszłych zapisków.
 '''
 import discord
 import datetime
@@ -42,6 +42,13 @@ class TrackerGlobal:
             return f"There are no noted messages sent by {user.global_name} in {server.name}"
         else:
             return result.RequestRaport(user)
+        
+    def CleanList(self, server, user):
+        result = self.findServer(server.id)
+        if result == False:
+            return f"There are no noted messages sent by {user.global_name} in {server.name}"
+        else:
+            return result.CleanList(user)
 
 class TrackerServer:
     def __init__(self, serverId):
@@ -74,6 +81,14 @@ class TrackerServer:
             return f"There are no noted messages sent by {user.global_name}"
         else:
             return result.GetRaport(self.streakLength, self.minimumStreakLength)
+        
+    def CleanList(self, user):
+        result = self.findUser(user.id)
+        if result == False:
+            return f"There are no noted messages sent by {user.global_name}"
+        else:
+            self.userTrackers.remove(result)
+            return f"Past streaks have been removed."
 
 class TrackerUser:
     def __init__(self, userId):
@@ -165,12 +180,16 @@ class MyClient(discord.Client):
         if (message.author == self.user or message.author.bot == True):
             return
 
-        elif message.content == "Angelotron raport":
-            text = self.globalTracker.RequestRaport(message.guild, message.author)
-            await message.channel.send(text)
+        elif message.content == "Angleotron raport" or "Ang raport":
+            reply = self.globalTracker.RequestRaport(message.guild, message.author)
+            await message.channel.send(reply)
 
-        else:
-            # Note message in user list.
+        elif message.content == "Angleotron clean" or "Ang clean":
+            reply = self.globalTracker.CleanList(message.guild, message.author)
+            await message.channel.send(reply)
+
+        else: 
+            # Note users message.
             print(f"{message.author} has sent a message.")
             self.globalTracker.NoteMessage(message)
 
