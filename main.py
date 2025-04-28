@@ -54,8 +54,6 @@ class TrackerServer:
     def __init__(self, serverId):
         self.serverId = serverId
         self.userTrackers = []
-        self.streakLength = 22 # in minutes
-        self.minimumStreakLength = 60 # in minutes
 
     def findUser(self, userId):
         for x in self.userTrackers:
@@ -80,7 +78,7 @@ class TrackerServer:
         if result == False:
             return f"There are no noted messages sent by {user.global_name}"
         else:
-            return result.GetRaport(self.streakLength, self.minimumStreakLength)
+            return result.GetRaport()
         
     def CleanList(self, user):
         result = self.findUser(user.id)
@@ -93,58 +91,67 @@ class TrackerServer:
 class TrackerUser:
     def __init__(self, userId):
         self.userId = userId
-        self.messageList = {}
+        self.streakList = []
 
     def AddMessage(self, message):
-        self.messageList[message.created_at] = message.jump_url
-        print(f"Noted message with link ({message.jump_url}) and timestamp ({message.created_at})")
+        # If there is no streak in list, add message
+        if len(self.streakList) == 0:
+            newStreak = Streak(message.created_at, message.jump_url)
+            self.streakList.append(newStreak)
+        # If there is at least one streak in the list
+        else:
+            latestStreak = self.streakList[-1]
+            # Check if the curernt streak is ongoing
+            if latestStreak.IsOngoing(message.created_at) == True:
+                # If so, update the last time
+                latestStreak.ExtendStreak(message.created_at, message.jump_url)
+            else:
+                # If not, create new one.
+                newStreak = Streak(message.created_at, message.jump_url)
+                self.streakList.append(newStreak)
 
-    def PrepareStreakMessage(self, streakLast, streakBeg, minLength):
-        dif = streakLast - streakBeg
-        link1 = self.messageList[streakBeg]
-        link2 = self.messageList[streakLast]
-
-        streakStartString = streakBeg.strftime("%d/%m/%Y %H:%M:%S")
-        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
-        amountXP = (dif.seconds // 60) // minLength
-
-        information = f"Streak found: {streakStartString} lasted {durationString} from {link1} to {link2}\n"
-        commandLink = f"Copy & Paste po xp: ```!xp +{amountXP} (RP: Od {link1} do {link2}, trwający {durationString})```\n"
-
-        return f"{information} {commandLink}"
+        print(f"\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
     
-    def GetRaport(self, streakLength, minLength):
+    def GetRaport(self):
         finalString = ""
 
-        streakBeg = False
-        streakLast = False
-
-        for msgTime in self.messageList:
-            # If it's first list element
-            if streakBeg == False:
-                streakBeg = msgTime   
-                streakLast = msgTime
-                continue
-
-            # Check if time between last msg and current is lesser then streak length
-            if streakLast + datetime.timedelta(minutes=streakLength) > msgTime:
-                # If so, update streakLast and go to next message
-                streakLast = msgTime
-                continue
-            else:
-                # If not, check how much time passed between streakBeg and streakLast, 
-                #  prepare and append final string 
-                #  and set streakBeg to this message.
-                finalString += self.PrepareStreakMessage(streakLast, streakBeg, minLength)
-
-                streakBeg = msgTime
-                streakLast = msgTime
+        for streak in self.streakList:
+            finalString += streak.PrintRaport()
 
         # when all messages have been checked, close the last
-        finalString += self.PrepareStreakMessage(streakLast, streakBeg, minLength)
         return finalString
         
 
+class Streak:
+    def __init__(self, begTime, begMsgLink):
+        self.beginTime = begTime
+        self.lastTime = begTime
+        self.begMsgLink = begMsgLink
+        self.lastMsgLink = begMsgLink
+
+    # Check if streak is ongoing
+    def IsOngoing(self, currTime):
+        # Check if time between last msg and current is lesser then streak length
+        return self.lastTime + datetime.timedelta(minutes=STREAK_LENGTH) > currTime
+        
+    # Update latest msg data
+    def ExtendStreak(self, newTime, newLink):
+        self.lastTime = newTime
+        self.lastMsgLink = newLink
+
+    # Present data as string
+    def PrintRaport(self):
+        dif = self.lastTime - self.beginTime
+
+        streakStartString = self.beginTime.strftime("%d/%m/%Y %H:%M:%S")
+        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
+        xpReward = (dif.seconds // 60) // STREAK_TRESHOLD * XP_PER_TRESHOLD
+
+        finalString = f"Streak found: {streakStartString} lasted {durationString} from {self.begMsgLink} to {self.lastMsgLink}"
+        if xpReward > 0:
+            finalString += f"\nCommand: ```!xp +{xpReward} (RP: From {self.begMsgLink} to {self.lastMsgLink}, during {durationString})```"
+
+        return finalString
 
 
 
@@ -160,8 +167,6 @@ class TrackerUser:
 
 
 
-# Process
-print("Booting up bot!")
 
 class MyClient(discord.Client):
     globalTracker = TrackerGlobal()
@@ -186,6 +191,12 @@ class MyClient(discord.Client):
             print(f"{message.author} has sent a message.")
             self.globalTracker.NoteMessage(message)
 
+
+# Process
+print("Booting up bot!")
+STREAK_LENGTH = 22 # in minutes
+STREAK_TRESHOLD = 60 # in minutes
+XP_PER_TRESHOLD = 100 # in minutes
 
 intents = discord.Intents.default()
 intents.message_content = True
