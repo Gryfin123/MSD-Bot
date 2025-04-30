@@ -1,14 +1,15 @@
 '''
 To do:
-- Blacklistowanie kanałów
-- Liczenie Streaków na bierząco
 - kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień)
-- na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
+
 
 Done:
 - podział na serwery
 - wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
 - komenda na kasowanie przeszłych zapisków.
+- na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
+- Liczenie Streaków na bierząco
+- whitelistowanie kanałów
 '''
 import inspect
 import discord
@@ -224,14 +225,18 @@ class MyClient(discord.Client):
         elif message.content == "Angleotron raport" or message.content == "Ang raport":
             reply = self.globalTracker.RequestRaport(message.guild, message.author)
             await message.channel.send(reply)
+            await message.delete()
 
         elif message.content == "Angleotron clean" or message.content == "Ang clean":
             reply = self.globalTracker.CleanList(message.guild, message.author)
-            await message.channel.send(reply)
+            await message.channel.send(reply, delete_after=60)
+            await message.delete()
 
         elif message.content == "Angleotron listen" or message.content == "Ang listen":
             reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
-            await message.channel.send(reply)
+            #await message.channel.send(reply, ephemeral=True)
+            await message.channel.send(reply, delete_after=15)
+            await message.delete()
 
         else: 
             # Note users message.
