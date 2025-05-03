@@ -1,16 +1,3 @@
-'''
-To do:
-- kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień)
-
-
-Done:
-- podział na serwery
-- wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
-- komenda na kasowanie przeszłych zapisków.
-- na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
-- Liczenie Streaków na bierząco
-- whitelistowanie kanałów
-'''
 import inspect
 import discord
 import datetime
@@ -117,9 +104,11 @@ class TrackerServer:
         for x in self.listeningCategoryList:
             if category.id == x.id:
                 self.listeningCategoryList.remove(x)
+                print(f"Now I won't be listening to channels from category \"{x.name}\".")
                 return f"Now I won't be listening to channels from category \"{x.name}\"."
         
         self.listeningCategoryList.append(category)
+        print(f"Now I will be listening to channels from category \"{category.name}\".")
         return f"Now I will be listening to channels from category \"{category.name}\"."
 
 
@@ -151,7 +140,7 @@ class TrackerUser:
         finalString = ""
 
         for streak in self.streakList:
-            finalString += streak.PrintRaport()
+            finalString += streak.PrintRaport() + "\n"
 
         # when all messages have been checked, close the last
         return finalString
