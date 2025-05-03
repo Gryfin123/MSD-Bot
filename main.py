@@ -1,15 +1,3 @@
-'''
-To do:
-- Blacklistowanie kanałów
-- Liczenie Streaków na bierząco
-- kasowanie zapisków dłuższych niż tydzień (Streaków których ostatnia wiadomość jest starsza niż tydzień)
-- na koniec raportu dać komende do skopiowania ( ```!xp +### (RP: [raport]))
-
-Done:
-- podział na serwery
-- wykluczanie botów (np. Avrae, użytkownicy tupperowi, etc.)
-- komenda na kasowanie przeszłych zapisków.
-'''
 import inspect
 import discord
 import datetime
@@ -116,9 +104,11 @@ class TrackerServer:
         for x in self.listeningCategoryList:
             if category.id == x.id:
                 self.listeningCategoryList.remove(x)
+                print(f"Now I won't be listening to channels from category \"{x.name}\".")
                 return f"Now I won't be listening to channels from category \"{x.name}\"."
         
         self.listeningCategoryList.append(category)
+        print(f"Now I will be listening to channels from category \"{category.name}\".")
         return f"Now I will be listening to channels from category \"{category.name}\"."
 
 
@@ -150,7 +140,7 @@ class TrackerUser:
         finalString = ""
 
         for streak in self.streakList:
-            finalString += streak.PrintRaport()
+            finalString += streak.PrintRaport() + "\n"
 
         # when all messages have been checked, close the last
         return finalString
@@ -224,14 +214,18 @@ class MyClient(discord.Client):
         elif message.content == "Angleotron raport" or message.content == "Ang raport":
             reply = self.globalTracker.RequestRaport(message.guild, message.author)
             await message.channel.send(reply)
+            await message.delete()
 
         elif message.content == "Angleotron clean" or message.content == "Ang clean":
             reply = self.globalTracker.CleanList(message.guild, message.author)
-            await message.channel.send(reply)
+            await message.channel.send(reply, delete_after=60)
+            await message.delete()
 
         elif message.content == "Angleotron listen" or message.content == "Ang listen":
             reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
-            await message.channel.send(reply)
+            #await message.channel.send(reply, ephemeral=True)
+            await message.channel.send(reply, delete_after=15)
+            await message.delete()
 
         else: 
             # Note users message.
