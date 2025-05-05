@@ -1,3 +1,5 @@
+#Problem: Raport message can become so long it is impossible to send.
+
 import inspect
 import discord
 import datetime
@@ -58,7 +60,7 @@ class TrackerServer:
 
     def findUser(self, userId):
         for x in self.userTrackers:
-            if x.userId == userId:
+            if x.user.id == userId:
                 return x
         return False
 
@@ -78,7 +80,7 @@ class TrackerServer:
         result = self.findUser(message.author.id)
         if result == False:
             # Add new user tracker
-            newTracker = TrackerUser(message.author.id)
+            newTracker = TrackerUser(message.author)
             self.userTrackers.append(newTracker)
             newTracker.AddMessage(message)
         else:
@@ -113,8 +115,8 @@ class TrackerServer:
 
 
 class TrackerUser:
-    def __init__(self, userId):
-        self.userId = userId
+    def __init__(self, user):
+        self.user = user
         self.streakList = []
 
     def AddMessage(self, message):
@@ -137,13 +139,19 @@ class TrackerUser:
         print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
     
     def GetRaport(self):
-        finalString = ""
-
+        print(f"{self.user} has requested raport")
+        finalString = f"# Raport: {self.user.display_name.capitalize()}\n"
+        streaksString = ""
         for streak in self.streakList:
-            finalString += streak.PrintRaport() + "\n"
+            raport = streak.PrintRaport()
+            if raport != "":
+                streaksString += raport + "\n"
 
         # when all messages have been checked, close the last
-        return finalString
+        if streaksString == "":
+            streaksString = " == No valid streaks found == "
+
+        return finalString + streaksString
         
 
 
@@ -171,11 +179,13 @@ class Streak:
         streakStartString = self.beginTime.strftime("%d/%m/%Y %H:%M:%S")
         durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
         xpReward = (dif.seconds // 60) // STREAK_TRESHOLD * XP_PER_TRESHOLD
-
-        finalString = f"Streak found: {streakStartString} lasted {durationString} from {self.begMsgLink} to {self.lastMsgLink}"
+        
+        finalString = ""
         if xpReward > 0:
+            finalString = f"Streak found: {streakStartString} lasted {durationString}"
             finalString += f"\nCommand: ```!xp +{xpReward} (RP: From {self.begMsgLink} to {self.lastMsgLink}, during {durationString})```"
-
+        elif dif.seconds > 0:
+            finalString = f"Streak found, but shortert then {STREAK_TRESHOLD} minutes ({durationString} minutes)"
         return finalString
 
 
@@ -234,7 +244,7 @@ class MyClient(discord.Client):
 
 # Process
 print("Booting up bot!")
-STREAK_LENGTH = 22 # in minutes
+STREAK_LENGTH = 26 # in minutes
 STREAK_TRESHOLD = 60 # in minutes
 XP_PER_TRESHOLD = 100 # in minutes
 
