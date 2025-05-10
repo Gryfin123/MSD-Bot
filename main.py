@@ -139,7 +139,8 @@ class TrackerUser:
         finalString = ""
 
         for streak in self.streakList:
-            finalString += streak.PrintRaport() + "\n"
+            if streak.isValid() == True:
+                finalString += streak.PrintRaport() + "\n"
 
         # when all messages have been checked, close the last
         return finalString
