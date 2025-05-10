@@ -7,13 +7,13 @@ class TrackerGlobal:
     def __init__(self):
         self.serverTrackers = []
         
-    def findServer(self, serverId):
+    def findServer(self, serverId: int):
         for x in self.serverTrackers:
             if x.serverId == serverId:
                 return x
         return False
 
-    def NoteMessage(self, message):
+    def NoteMessage(self, message: discord.Message):
         result = self.findServer(message.guild.id)
         if result == False:
             # Add new user tracker
@@ -23,27 +23,27 @@ class TrackerGlobal:
             # Add message to existing tracker
             result.NoteMessage(message)
 
-    def RequestRaport(self, server, user):
+    def RequestRaport(self, server: discord.Guild, user: discord.User):
         result = self.findServer(server.id)
         if result == False:
             return f"There are no noted messages sent by {user.global_name} in {server.name}"
         else:
             return result.RequestRaport(user)
         
-    def CleanList(self, server, user):
+    def CleanList(self, server: discord.guild, user: discord.User):
         result = self.findServer(server.id)
         if result == False:
             return f"There are no noted messages sent by {user.global_name} in {server.name}"
         else:
             return result.CleanList(user)
 
-    def RegisterNewTracker(self, server):
+    def RegisterNewTracker(self, server: discord.Guild):
         print(f"Registring new Server Tracker for {server.name} (Guild)")
         newTracker = TrackerServer(server.id)
         self.serverTrackers.append(newTracker)
         return newTracker
 
-    def UpdateListenList(self, server, category):
+    def UpdateListenList(self, server: discord.Guild, category: discord.CategoryChannel):
         result = self.findServer(server.id)
         if result == False:
             result = self.RegisterNewTracker(server)
@@ -51,18 +51,18 @@ class TrackerGlobal:
         return result.ToggleListeningCategory(category)
 
 class TrackerServer:
-    def __init__(self, serverId):
+    def __init__(self, serverId: int):
         self.serverId = serverId
         self.userTrackers = []
         self.listeningCategoryList = []
 
-    def findUser(self, userId):
+    def findUser(self, userId: int):
         for x in self.userTrackers:
             if x.userId == userId:
                 return x
         return False
 
-    def NoteMessage(self, message):
+    def NoteMessage(self, message: discord.Message):
         # Check if bot should listen to message's channel
         # Check only if there are any categories selected
         if len(self.listeningCategoryList) > 0:
@@ -85,14 +85,14 @@ class TrackerServer:
             # Add message to existing tracker
             result.AddMessage(message)
 
-    def RequestRaport(self, user):
+    def RequestRaport(self, user: discord.User):
         result = self.findUser(user.id)
         if result == False:
             return f"There are no noted messages sent by {user.global_name}"
         else:
             return result.GetRaport()
         
-    def CleanList(self, user):
+    def CleanList(self, user: discord.User):
         result = self.findUser(user.id)
         if result == False:
             return f"There are no noted messages sent by {user.global_name}"
@@ -100,7 +100,7 @@ class TrackerServer:
             self.userTrackers.remove(result)
             return f"Past streaks have been removed."
         
-    def ToggleListeningCategory(self, category):
+    def ToggleListeningCategory(self, category: discord.CategoryChannel):
         for x in self.listeningCategoryList:
             if category.id == x.id:
                 self.listeningCategoryList.remove(x)
@@ -111,13 +111,12 @@ class TrackerServer:
         print(f"Now I will be listening to channels from category \"{category.name}\".")
         return f"Now I will be listening to channels from category \"{category.name}\"."
 
-
 class TrackerUser:
-    def __init__(self, userId):
+    def __init__(self, userId: int):
         self.userId = userId
         self.streakList = []
 
-    def AddMessage(self, message):
+    def AddMessage(self, message: discord.Message):
         # If there is no streak in list, add message
         if len(self.streakList) == 0:
             newStreak = Streak(message.created_at, message.jump_url)
@@ -148,19 +147,19 @@ class TrackerUser:
 
 
 class Streak:
-    def __init__(self, begTime, begMsgLink):
+    def __init__(self, begTime: datetime.datetime, begMsgLink: str):
         self.beginTime = begTime
         self.lastTime = begTime
         self.begMsgLink = begMsgLink
         self.lastMsgLink = begMsgLink
 
     # Check if streak is ongoing
-    def IsOngoing(self, currTime):
+    def IsOngoing(self, currTime: datetime.datetime):
         # Check if time between last msg and current is lesser then streak length
         return self.lastTime + datetime.timedelta(minutes=STREAK_LENGTH) > currTime
         
     # Update latest msg data
-    def ExtendStreak(self, newTime, newLink):
+    def ExtendStreak(self, newTime: datetime.datetime, newLink: str):
         self.lastTime = newTime
         self.lastMsgLink = newLink
 
@@ -177,8 +176,6 @@ class Streak:
             finalString += f"\nCommand: ```!xp +{xpReward} (RP: From {self.begMsgLink} to {self.lastMsgLink}, during {durationString})```"
 
         return finalString
-
-
 
 
 
