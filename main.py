@@ -157,7 +157,13 @@ class Streak:
     def IsOngoing(self, currTime: datetime.datetime):
         # Check if time between last msg and current is lesser then streak length
         return self.lastTime + datetime.timedelta(minutes=STREAK_LENGTH) > currTime
-        
+
+    def isValid(self):
+        if self.beginTime != self.lastTime:
+            return True
+        else:
+            return False
+
     # Update latest msg data
     def ExtendStreak(self, newTime: datetime.datetime, newLink: str):
         self.lastTime = newTime
