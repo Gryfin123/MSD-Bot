@@ -3,6 +3,7 @@ import discord
 import datetime
 import getToken
 
+# Trackers
 class TrackerGlobal:
     def __init__(self):
         self.serverTrackers = []
@@ -146,7 +147,7 @@ class TrackerUser:
         return finalString
         
 
-
+# Structs
 class Streak:
     def __init__(self, begTime: datetime.datetime, begMsgLink: str):
         self.beginTime = begTime
@@ -180,11 +181,14 @@ class Streak:
 
         finalString = f"Streak found: {streakStartString} lasted {durationString} from {self.begMsgLink} to {self.lastMsgLink}"
         if xpReward > 0:
-            finalString += f"\nCommand: ```!xp +{xpReward} (RP: From {self.begMsgLink} to {self.lastMsgLink}, during {durationString})```"
+            finalString += f"\nCommand: ```!xp +{xpReward} (RP: From {self.begMsgLink} to {self.lastMsgLink} | {durationString})```"
 
         return finalString
 
-
+class Raport:
+    def __init__(self, summary: str = "", details: str = ""):
+        self.summary = summary
+        self.details = details
 
 
 
