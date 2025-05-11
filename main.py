@@ -166,6 +166,14 @@ class Streak:
         else:
             return False
 
+
+    def GetStreakDurationSeconds(self) -> int:
+        return self.lastTime - self.beginTime
+
+    def GetStreakDurationString(self) -> int:
+        dif = self.GetStreakDurationSeconds()
+        return f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
+
     # Update latest msg data
     def ExtendStreak(self, newTime: datetime.datetime, newLink: str) -> None:
         self.lastTime = newTime
@@ -216,6 +224,7 @@ class MyClient(discord.Client):
             > Currently implemented are following commands:
             > - `Angleotron raport`/`Ang raport` - presents all past streaks
             > - `Angleotron clean`/`Ang clean` - removes all past streaks
+            > - `Angleotron clean`/`Ang autoclean` - automatically removes all past streaks after requesting raport
             > - `Angleotron listen`/`Ang listen` - makes the bot listen only to channels in specific category. If none is selected, listens to all of them.""")
             await message.channel.send(reply)
 
@@ -229,12 +238,16 @@ class MyClient(discord.Client):
             await message.channel.send(reply, delete_after=60)
             await message.delete()
 
-        elif message.content == "Angleotron listen" or message.content == "Ang listen":
-            reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
-            #await message.channel.send(reply, ephemeral=True)
-            await message.channel.send(reply, delete_after=15)
+        elif message.content == "Angleotron autoclean" or message.content == "Ang autoclean":
+            #reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
+            await message.channel.send("Not implemented yet", delete_after=15)
             await message.delete()
 
+        elif message.content == "Angleotron listen" or message.content == "Ang listen":
+            reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
+            await message.channel.send(reply, delete_after=15)
+            await message.delete()
+            
         else: 
             # Note users message.
             self.globalTracker.NoteMessage(message)
