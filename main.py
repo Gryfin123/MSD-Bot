@@ -2,150 +2,7 @@ import inspect
 import discord
 import datetime
 import getToken
-
-# Trackers
-class TrackerGlobal:
-    def __init__(self):
-        self.serverTrackers = []
-        
-    def findServer(self, serverId: int):
-        for x in self.serverTrackers:
-            if x.serverId == serverId:
-                return x
-        return False
-
-    def NoteMessage(self, message: discord.Message) -> None:
-        result = self.findServer(message.guild.id)
-        if result == False:
-            # Add new user tracker
-            newTracker = self.RegisterNewTracker(message.guild)
-            newTracker.NoteMessage(message)
-        else:
-            # Add message to existing tracker
-            result.NoteMessage(message)
-
-    def RequestRaport(self, server: discord.Guild, user: discord.User) -> str:
-        result = self.findServer(server.id)
-        if result == False:
-            return f"There are no noted messages sent by {user.global_name} in {server.name}"
-        else:
-            return result.RequestRaport(user)
-        
-    def CleanList(self, server: discord.guild, user: discord.User) -> str:
-        result = self.findServer(server.id)
-        if result == False:
-            return f"There are no noted messages sent by {user.global_name} in {server.name}"
-        else:
-            return result.CleanList(user)
-
-    def RegisterNewTracker(self, server: discord.Guild) -> None:
-        print(f"Registring new Server Tracker for {server.name} (Guild)")
-        newTracker = TrackerServer(server.id)
-        self.serverTrackers.append(newTracker)
-        return newTracker
-
-    def UpdateListenList(self, server: discord.Guild, category: discord.CategoryChannel) -> str:
-        result = self.findServer(server.id)
-        if result == False:
-            result = self.RegisterNewTracker(server)
-        
-        return result.ToggleListeningCategory(category)
-
-class TrackerServer:
-    def __init__(self, serverId: int):
-        self.serverId = serverId
-        self.userTrackers = []
-        self.listeningCategoryList = []
-
-    def findUser(self, userId: int) -> discord.User:
-        for x in self.userTrackers:
-            if x.userId == userId:
-                return x
-        return False
-
-    def NoteMessage(self, message: discord.Message) -> None:
-        # Check if bot should listen to message's channel
-        # Check only if there are any categories selected
-        if len(self.listeningCategoryList) > 0:
-            channelPresent = False
-            for x in self.listeningCategoryList:
-                if message.channel.category.id == x.id:
-                    channelPresent = True
-            if channelPresent == False:
-                print(f"{message.author} has sent a message, which is ignore due to listening rule.")
-                return # If category is not on the list, ignore message
-
-        # If bot is allowed to listen to that category, process message
-        result = self.findUser(message.author.id)
-        if result == False:
-            # Add new user tracker
-            newTracker = TrackerUser(message.author.id)
-            self.userTrackers.append(newTracker)
-            newTracker.AddMessage(message)
-        else:
-            # Add message to existing tracker
-            result.AddMessage(message)
-
-    def RequestRaport(self, user: discord.User) -> str:
-        result = self.findUser(user.id)
-        if result == False:
-            return f"There are no noted messages sent by {user.global_name}"
-        else:
-            return result.GetRaport()
-        
-    def CleanList(self, user: discord.User) -> str:
-        result = self.findUser(user.id)
-        if result == False:
-            return f"There are no noted messages sent by {user.global_name}"
-        else:
-            self.userTrackers.remove(result)
-            return f"Past streaks have been removed."
-        
-    def ToggleListeningCategory(self, category: discord.CategoryChannel) -> str:
-        for x in self.listeningCategoryList:
-            if category.id == x.id:
-                self.listeningCategoryList.remove(x)
-                print(f"Now I won't be listening to channels from category \"{x.name}\".")
-                return f"Now I won't be listening to channels from category \"{x.name}\"."
-        
-        self.listeningCategoryList.append(category)
-        print(f"Now I will be listening to channels from category \"{category.name}\".")
-        return f"Now I will be listening to channels from category \"{category.name}\"."
-
-class TrackerUser:
-    def __init__(self, userId: int):
-        self.userId = userId
-        self.streakList = []
-
-    def AddMessage(self, message: discord.Message) -> None:
-        # If there is no streak in list, add message
-        if len(self.streakList) == 0:
-            newStreak = Streak(message.created_at, message.jump_url)
-            self.streakList.append(newStreak)
-        # If there is at least one streak in the list
-        else:
-            latestStreak = self.streakList[-1]
-            # Check if the curernt streak is ongoing
-            if latestStreak.IsOngoing(message.created_at) == True:
-                # If so, update the last time
-                latestStreak.ExtendStreak(message.created_at, message.jump_url)
-            else:
-                # If not, create new one.
-                newStreak = Streak(message.created_at, message.jump_url)
-                self.streakList.append(newStreak)
-
-        print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
-    
-    def GetRaport(self) -> str:
-        finalString = ""
-
-        for streak in self.streakList:
-            if streak.isValid() == True:
-                finalString += streak.PrintRaport() + "\n"
-
-        # when all messages have been checked, close the last
-        return finalString
-        
+from typing import List
 
 # Structs
 class Streak:
@@ -166,40 +23,219 @@ class Streak:
         else:
             return False
 
-
     def GetStreakDurationSeconds(self) -> int:
-        return self.lastTime - self.beginTime
+        return (self.lastTime - self.beginTime).seconds
 
     def GetStreakDurationString(self) -> int:
         dif = self.GetStreakDurationSeconds()
-        return f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
+        return f"{(dif // 3600):02d}:{((dif % 3600) // 60):02d}:{(dif % 60):02d}"
+    
+    def GetStreakStartDateString(self) -> str:
+        return  self.beginTime.strftime("%d/%m/%Y %H:%M:%S")
+    
+    def GetStreakLastDateString(self) -> str:
+        return  self.lastTime.strftime("%d/%m/%Y %H:%M:%S")
+    
+    def GetXpReward(self) -> int:
+        dif = self.GetStreakDurationSeconds()
+        return (dif // 60) // STREAK_TRESHOLD * XP_PER_TRESHOLD
 
     # Update latest msg data
     def ExtendStreak(self, newTime: datetime.datetime, newLink: str) -> None:
         self.lastTime = newTime
         self.lastMsgLink = newLink
 
-    # Present data as string
-    def PrintRaport(self) -> str:
-        dif = self.lastTime - self.beginTime
-
-        streakStartString = self.beginTime.strftime("%d/%m/%Y %H:%M:%S")
-        durationString = f"{(dif.seconds // 3600):02d}:{((dif.seconds % 3600) // 60):02d}:{(dif.seconds % 60):02d}"
-        xpReward = (dif.seconds // 60) // STREAK_TRESHOLD * XP_PER_TRESHOLD
-
-        finalString = f"Streak found: {streakStartString} lasted {durationString} from {self.begMsgLink} to {self.lastMsgLink}"
-        if xpReward > 0:
-            finalString += f"\nCommand: ```!xp +{xpReward} (RP: From {self.begMsgLink} to {self.lastMsgLink} | {durationString})```"
-
-        return finalString
+    # Present streak as string
+    def PrintStreakRaport(self) -> str:
+        return f"{self.GetStreakStartDateString()} - {self.GetStreakLastDateString()} | {self.GetXpReward()}xp | Lasted {self.GetStreakDurationString()} from {self.begMsgLink} to {self.lastMsgLink}"
+        
 
 class Raport:
-    def __init__(self, summary: str = "", details: str = ""):
-        self.summary = summary
-        self.details = details
+    def __init__(self, list: List[Streak], user: discord.User):
+        self.user = user
+        self.streaks = list
+
+    def GetDetails(self) -> str:
+        details = ""
+
+        # Collect details
+        for streak in self.streaks:
+            if streak.isValid() == True:
+                details += streak.PrintStreakRaport() + "\n"
+        
+        return details
+    
+    def GetSummary(self) -> str:
+        firstStreakDate = self.streaks[0].GetStreakStartDateString()
+
+        # Prepare summary
+        summary = f"# {self.user.display_name} - Raport\n"
+        summary += f"Collection of streaks starting from {firstStreakDate}\n"
+
+        return summary
+    
+    def GetRewardCommand(self, sourceLink: str) -> str:
+        firstStreakDate = self.streaks[0].GetStreakStartDateString()
+        totalTime = 0
+        totalXp = 0
+
+        for streak in self.streaks:
+            if streak.isValid() == True:
+                totalXp += streak.GetXpReward()
+                totalTime += streak.GetStreakDurationSeconds()
+        
+        totalTimeString = f"{(totalTime // 3600):02d}:{((totalTime % 3600) // 60):02d}:{(totalTime % 60):02d}"
+        return f"\nCommand: ```!xp +{totalXp} (RP: From {firstStreakDate}, during {totalTimeString} | Details: {sourceLink})```"
+
+    def isValid(self) -> bool:
+        for curr in self.streaks:
+            if curr.isValid() == True:
+                return True
+        return False
 
 
 
+# Trackers
+class TrackerUser:
+    def __init__(self, user: discord.User):
+        self.user = user
+        self.streakList = []
+
+    def AddMessage(self, message: discord.Message) -> None:
+        # If there is no streak in list, create new streak
+        if len(self.streakList) == 0:
+            newStreak = Streak(message.created_at, message.jump_url)
+            self.streakList.append(newStreak)
+        # If there is at least one streak in the list
+        else:
+            latestStreak = self.streakList[-1]
+            # Check if the curernt streak is ongoing
+            if latestStreak.IsOngoing(message.created_at) == True:
+                # If so, update the last time
+                latestStreak.ExtendStreak(message.created_at, message.jump_url)
+            else:
+                # If not, create new one.
+                newStreak = Streak(message.created_at, message.jump_url)
+                self.streakList.append(newStreak)
+
+        print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
+    
+    def GetRaport(self) -> Raport:
+        # Prepare Raport
+        return Raport(self.streakList, self.user)
+        
+class TrackerServer:
+    def __init__(self, server: discord.Guild):
+        self.server = server
+        self.userTrackers = []
+        self.listeningCategoryList = []
+
+    def findUser(self, userId: int) -> TrackerUser:
+        for x in self.userTrackers:
+            if x.user.id == userId:
+                return x
+        return False
+
+    def NoteMessage(self, message: discord.Message) -> None:
+        # Check if bot should listen to message's channel
+        # Check only if there are any categories selected
+        if len(self.listeningCategoryList) > 0:
+            channelPresent = False
+            for x in self.listeningCategoryList:
+                if message.channel.category.id == x.id:
+                    channelPresent = True
+            if channelPresent == False:
+                print(f"{message.author} has sent a message, which is ignore due to listening rule.")
+                return # If category is not on the list, ignore message
+
+        # If bot is allowed to listen to that category, process message
+        result = self.findUser(message.author.id)
+        if result == False:
+            # Add new user tracker
+            newTracker = self.RegisterNewTracker(message.author)
+            newTracker.AddMessage(message)
+        else:
+            # Add message to existing tracker
+            result.AddMessage(message)
+
+    def RequestRaport(self, user: discord.User) -> Raport:
+        result = self.findUser(user.id)
+        if result == False:
+            return f"There are no noted messages sent by {user.global_name}"
+        else:
+            return result.GetRaport()
+        
+    def RegisterNewTracker(self, user: discord.User) -> TrackerUser:
+        print(f"Registring new User Tracker for {user.name} (user) on server {self.server.name}")
+        newTracker = TrackerUser(user)
+        self.userTrackers.append(newTracker)
+        return newTracker
+    
+    def CleanList(self, user: discord.User) -> str:
+        result = self.findUser(user.id)
+        if result == False:
+            return f"There are no noted messages sent by {user.global_name}"
+        else:
+            self.userTrackers.remove(result)
+            return f"Past streaks have been removed."
+        
+    def ToggleListeningCategory(self, category: discord.CategoryChannel) -> str:
+        for x in self.listeningCategoryList:
+            if category.id == x.id:
+                self.listeningCategoryList.remove(x)
+                print(f"Now I won't be listening to channels from category \"{x.name}\".")
+                return f"Now I won't be listening to channels from category \"{x.name}\"."
+        
+        self.listeningCategoryList.append(category)
+        print(f"Now I will be listening to channels from category \"{category.name}\".")
+        return f"Now I will be listening to channels from category \"{category.name}\"."
+
+class TrackerGlobal:
+    def __init__(self):
+        self.serverTrackers = []
+        
+    def findServer(self, serverId: int):
+        for x in self.serverTrackers:
+            if x.server.id == serverId:
+                return x
+        return False
+
+    def NoteMessage(self, message: discord.Message) -> None:
+        result = self.findServer(message.guild.id)
+        if result == False:
+            # Add new user tracker
+            newTracker = self.RegisterNewTracker(message.guild)
+            newTracker.NoteMessage(message)
+        else:
+            # Add message to existing tracker
+            result.NoteMessage(message)
+
+    def RequestRaport(self, server: discord.Guild, user: discord.User) -> Raport:
+        result = self.findServer(server.id)
+        if result == False:
+            return f"There are no noted messages sent by {user.global_name} in {server.name}"
+        else:
+            return result.RequestRaport(user)
+        
+    def CleanList(self, server: discord.guild, user: discord.User) -> str:
+        result = self.findServer(server.id)
+        if result == False:
+            return f"There are no noted messages sent by {user.global_name} in {server.name}"
+        else:
+            return result.CleanList(user)
+
+    def RegisterNewTracker(self, server: discord.Guild) -> TrackerServer:
+        print(f"Registring new Server Tracker for {server.name} (Guild)")
+        newTracker = TrackerServer(server)
+        self.serverTrackers.append(newTracker)
+        return newTracker
+
+    def UpdateListenList(self, server: discord.Guild, category: discord.CategoryChannel) -> str:
+        result = self.findServer(server.id)
+        if result == False:
+            result = self.RegisterNewTracker(server)
+        
+        return result.ToggleListeningCategory(category)
 
 
 
@@ -229,13 +265,32 @@ class MyClient(discord.Client):
             await message.channel.send(reply)
 
         elif message.content == "Angleotron raport" or message.content == "Ang raport":
-            reply = self.globalTracker.RequestRaport(message.guild, message.author)
-            await message.channel.send(reply)
+            raport = self.globalTracker.RequestRaport(message.guild, message.author)
+            # Put details into text file    
+            now = datetime.datetime.now().strftime("%d%m%Y")
+            filename = f"Details - {message.author} {now}.txt"
+
+            # If return is string value
+            if type(raport) != Raport:
+                await message.channel.send(raport, delete_after=15)
+                return
+
+            with open(filename, "w") as file:
+                file.write(raport.GetDetails())
+            
+            # Send message with summary and details
+            with open(filename, "rb") as file:
+                msgSent = await message.channel.send(raport.GetSummary(), file=discord.File(file, filename))
+
+            # Then send command, if there is any xp to get
+            await message.channel.send(raport.GetRewardCommand(msgSent.jump_url))
+
+            # Delete original raport request sent by the user from the chat
             await message.delete()
 
         elif message.content == "Angleotron clean" or message.content == "Ang clean":
             reply = self.globalTracker.CleanList(message.guild, message.author)
-            await message.channel.send(reply, delete_after=60)
+            await message.channel.send(reply, delete_after=15)
             await message.delete()
 
         elif message.content == "Angleotron autoclean" or message.content == "Ang autoclean":
@@ -255,7 +310,7 @@ class MyClient(discord.Client):
 
 # Process
 print("Booting up bot!")
-STREAK_LENGTH = 22 # in minutes
+STREAK_LENGTH = 26 # in minutes
 STREAK_TRESHOLD = 60 # in minutes
 XP_PER_TRESHOLD = 100 # in minutes
 
