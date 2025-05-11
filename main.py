@@ -1,3 +1,4 @@
+import os
 import inspect
 import discord
 import datetime
@@ -286,7 +287,10 @@ class MyClient(discord.Client):
             await message.channel.send(raport.GetRewardCommand(msgSent.jump_url))
 
             # Delete original raport request sent by the user from the chat
+            # and text file left in the folder
             await message.delete()
+            if os.path.exists(filename):
+                os.remove(filename)
 
         elif message.content == "Angleotron clean" or message.content == "Ang clean":
             reply = self.globalTracker.CleanList(message.guild, message.author)
