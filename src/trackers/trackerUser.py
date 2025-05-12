@@ -6,6 +6,7 @@ from src.raport import Raport
 class TrackerUser:
     def __init__(self, user: discord.User):
         self.user = user
+        self.autoClean = False
         self.streakList = []
 
     def AddMessage(self, message: discord.Message) -> None:
@@ -26,6 +27,9 @@ class TrackerUser:
                 self.streakList.append(newStreak)
 
         print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
+    
+    def RemoveStreaks(self) -> None:
+        pass
     
     def GetRaport(self) -> Raport:
         # Prepare Raport
