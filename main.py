@@ -5,86 +5,14 @@ import discord
 import datetime
 
 import getToken
-from src.streak import Streak
-
-from typing import List
 
 # Structs
-        
-
-class Raport:
-    def __init__(self, list: List[Streak], user: discord.User):
-        self.user = user
-        self.streaks = list
-
-    def GetDetails(self) -> str:
-        details = ""
-
-        # Collect details
-        for streak in self.streaks:
-            if streak.isValid() == True:
-                details += streak.PrintStreakRaport() + "\n"
-        
-        return details
-    
-    def GetSummary(self) -> str:
-        firstStreakDate = self.streaks[0].GetStreakStartDateString()
-
-        # Prepare summary
-        summary = f"# {self.user.display_name} - Raport\n"
-        summary += f"Collection of streaks starting from {firstStreakDate}\n"
-
-        return summary
-    
-    def GetRewardCommand(self, sourceLink: str) -> str:
-        firstStreakDate = self.streaks[0].GetStreakStartDateString()
-        totalTime = 0
-        totalXp = 0
-
-        for streak in self.streaks:
-            if streak.isValid() == True:
-                totalXp += streak.GetXpReward()
-                totalTime += streak.GetStreakDurationSeconds()
-        
-        totalTimeString = f"{(totalTime // 3600):02d}:{((totalTime % 3600) // 60):02d}:{(totalTime % 60):02d}"
-        return f"\nCommand: ```!xp +{totalXp} (RP: From {firstStreakDate}, during {totalTimeString} | Details: {sourceLink})```"
-
-    def isValid(self) -> bool:
-        for curr in self.streaks:
-            if curr.isValid() == True:
-                return True
-        return False
-
-
+from src.streak import Streak
+from src.raport import Raport
 
 # Trackers
-class TrackerUser:
-    def __init__(self, user: discord.User):
-        self.user = user
-        self.streakList = []
+from src.trackers.trackerUser import TrackerUser
 
-    def AddMessage(self, message: discord.Message) -> None:
-        # If there is no streak in list, create new streak
-        if len(self.streakList) == 0:
-            newStreak = Streak(message.created_at, message.jump_url)
-            self.streakList.append(newStreak)
-        # If there is at least one streak in the list
-        else:
-            latestStreak = self.streakList[-1]
-            # Check if the curernt streak is ongoing
-            if latestStreak.IsOngoing(message.created_at) == True:
-                # If so, update the last time
-                latestStreak.ExtendStreak(message.created_at, message.jump_url)
-            else:
-                # If not, create new one.
-                newStreak = Streak(message.created_at, message.jump_url)
-                self.streakList.append(newStreak)
-
-        print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
-    
-    def GetRaport(self) -> Raport:
-        # Prepare Raport
-        return Raport(self.streakList, self.user)
         
 class TrackerServer:
     def __init__(self, server: discord.Guild):
