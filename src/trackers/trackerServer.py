@@ -1,6 +1,5 @@
 import discord
 
-from src.streak import Streak
 from src.raport import Raport
 from src.trackers.trackerUser import TrackerUser
 
