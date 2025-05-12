@@ -1,4 +1,5 @@
 import datetime
+import math
 from src.globalVars import GlobalVars
 
 class Streak:
@@ -26,6 +27,9 @@ class Streak:
         dif = self.GetStreakDurationSeconds()
         return f"{(dif // 3600):02d}:{((dif % 3600) // 60):02d}:{(dif % 60):02d}"
     
+    def GetStreakStartTimestampString(self) -> str:
+        return  math.floor(self.beginTime.timestamp())
+    
     def GetStreakStartDateString(self) -> str:
         return  self.beginTime.strftime("%d/%m/%Y %H:%M:%S")
     
@@ -43,4 +47,4 @@ class Streak:
 
     # Present streak as string
     def PrintStreakRaport(self) -> str:
-        return f"{self.GetStreakStartDateString()} - {self.GetStreakLastDateString()} | {self.GetXpReward()}xp | Lasted {self.GetStreakDurationString()} from {self.begMsgLink} to {self.lastMsgLink}"
+        return f"{self.GetStreakStartDateString()} - {self.GetStreakLastDateString()} (UTC)| {self.GetXpReward()}xp | Lasted {self.GetStreakDurationString()} from {self.begMsgLink} to {self.lastMsgLink}"

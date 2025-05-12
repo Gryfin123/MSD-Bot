@@ -56,12 +56,12 @@ class MyClient(discord.Client):
 
         elif message.content == "Angleotron clean" or message.content == "Ang clean":
             reply = self.globalTracker.CleanList(message.guild, message.author)
-            await message.channel.send(reply, delete_after=15)
+            await message.channel.send(reply)
             await message.delete()
 
         elif message.content == "Angleotron autoclean" or message.content == "Ang autoclean":
             reply = self.globalTracker.ToggleAutoClean(message.guild, message.author)
-            await message.channel.send(reply, delete_after=15)
+            await message.channel.send(reply)
             await message.delete()
 
         elif message.content == "Angleotron listen" or message.content == "Ang listen":

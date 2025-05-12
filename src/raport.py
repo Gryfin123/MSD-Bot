@@ -19,16 +19,16 @@ class Raport:
         return details
     
     def GetSummary(self) -> str:
-        firstStreakDate = self.streaks[0].GetStreakStartDateString()
+        firstStreakDate = self.streaks[0].GetStreakStartTimestampString()
 
         # Prepare summary
         summary = f"# {self.user.display_name} - Raport\n"
-        summary += f"Collection of streaks starting from {firstStreakDate}\n"
+        summary += f"Collection of streaks starting from <t:{firstStreakDate}:f>. Remember to use `Ang clean` to remove streaks if they are not removed automatically to make it easier to use.\n"
 
         return summary
     
     def GetRewardCommand(self, sourceLink: str) -> str:
-        firstStreakDate = self.streaks[0].GetStreakStartDateString()
+        firstStreakDate = self.streaks[0].GetStreakStartTimestampString()
         totalTime = 0
         totalXp = 0
 
@@ -38,7 +38,8 @@ class Raport:
                 totalTime += streak.GetStreakDurationSeconds()
         
         totalTimeString = f"{(totalTime // 3600):02d}:{((totalTime % 3600) // 60):02d}:{(totalTime % 60):02d}"
-        return f"\nCommand: ```!xp +{totalXp} (RP: From {firstStreakDate}, during {totalTimeString} | Details: {sourceLink})```"
+        #totalTimeString = f"<t:{totalTime}:f>"
+        return f"\nCommand: ```!xp +{totalXp} (RP: From <t:{firstStreakDate}:f>, during {totalTimeString} | Details: {sourceLink})```"
 
     def isValid(self) -> bool:
         for curr in self.streaks:
