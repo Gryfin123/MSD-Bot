@@ -55,8 +55,15 @@ class TrackerServer:
         if result == False:
             return f"There are no noted messages sent by {user.global_name}"
         else:
-            self.userTrackers.remove(result)
+            result.CleanStreaks()
             return f"Past streaks have been removed."
+        
+    def ToggleAutoClean(self, user: discord.User) -> str:
+        result = self.findUser(user.id)
+        if result == False:
+            result = self.RegisterNewTracker(user)
+            
+        return result.ToggleAutoClean()
         
     def ToggleListeningCategory(self, category: discord.CategoryChannel) -> str:
         for x in self.listeningCategoryList:

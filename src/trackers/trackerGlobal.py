@@ -36,6 +36,13 @@ class TrackerGlobal:
             return f"There are no noted messages sent by {user.global_name} in {server.name}"
         else:
             return result.CleanList(user)
+        
+    def ToggleAutoClean(self, server: discord.guild, user: discord.User) -> str:
+        result = self.findServer(server.id)
+        if result == False:
+            result = self.RegisterNewTracker(server)
+            
+        return result.ToggleAutoClean(user)
 
     def RegisterNewTracker(self, server: discord.Guild) -> TrackerServer:
         print(f"Registring new Server Tracker for {server.name} (Guild)")

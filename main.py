@@ -60,8 +60,8 @@ class MyClient(discord.Client):
             await message.delete()
 
         elif message.content == "Angleotron autoclean" or message.content == "Ang autoclean":
-            #reply = self.globalTracker.UpdateListenList(message.guild, message.channel.category)
-            await message.channel.send("Not implemented yet", delete_after=15)
+            reply = self.globalTracker.ToggleAutoClean(message.guild, message.author)
+            await message.channel.send(reply, delete_after=15)
             await message.delete()
 
         elif message.content == "Angleotron listen" or message.content == "Ang listen":

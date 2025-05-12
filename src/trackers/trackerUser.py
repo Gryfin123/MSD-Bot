@@ -28,9 +28,26 @@ class TrackerUser:
 
         print(f"Message by {message.author}\n\tNoted message: ({message.jump_url})\n\tTimestamp ({message.created_at})")
     
-    def RemoveStreaks(self) -> None:
-        pass
-    
+    def CleanStreaks(self) -> None:
+        print(f"Streak history of {self.user.name} has been cleared.")
+        self.streakList.clear()
+
     def GetRaport(self) -> Raport:
         # Prepare Raport
-        return Raport(self.streakList, self.user)
+        if len(self.streakList) > 0:
+            raport = Raport(self.streakList.copy(), self.user)
+        else:
+            return f"There are no streaks for {self.user.global_name}"
+        # Clean streaks if setting for this is enabled
+        if self.autoClean == True:
+            self.CleanStreaks()
+
+        return raport
+    
+    def ToggleAutoClean(self) -> str:
+        if self.autoClean == False:
+            self.autoClean = True
+            return f"From now, whenever {self.user.display_name} requests raport, their past streaks will be cleared."
+        else:
+            self.autoClean = False
+            return f"From now, {self.user.display_name}'s past streaks will not be cleared anymore, whenever they request raport."
