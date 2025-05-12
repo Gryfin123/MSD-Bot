@@ -1,54 +1,15 @@
+
 import os
 import inspect
 import discord
 import datetime
+
 import getToken
+from src.streak import Streak
+
 from typing import List
 
 # Structs
-class Streak:
-    def __init__(self, begTime: datetime.datetime, begMsgLink: str):
-        self.beginTime = begTime
-        self.lastTime = begTime
-        self.begMsgLink = begMsgLink
-        self.lastMsgLink = begMsgLink
-
-    # Check if streak is ongoing
-    def IsOngoing(self, currTime: datetime.datetime) -> bool:
-        # Check if time between last msg and current is lesser then streak length
-        return self.lastTime + datetime.timedelta(minutes=STREAK_LENGTH) > currTime
-
-    def isValid(self) -> bool:
-        if self.beginTime != self.lastTime:
-            return True
-        else:
-            return False
-
-    def GetStreakDurationSeconds(self) -> int:
-        return (self.lastTime - self.beginTime).seconds
-
-    def GetStreakDurationString(self) -> int:
-        dif = self.GetStreakDurationSeconds()
-        return f"{(dif // 3600):02d}:{((dif % 3600) // 60):02d}:{(dif % 60):02d}"
-    
-    def GetStreakStartDateString(self) -> str:
-        return  self.beginTime.strftime("%d/%m/%Y %H:%M:%S")
-    
-    def GetStreakLastDateString(self) -> str:
-        return  self.lastTime.strftime("%d/%m/%Y %H:%M:%S")
-    
-    def GetXpReward(self) -> int:
-        dif = self.GetStreakDurationSeconds()
-        return (dif // 60) // STREAK_TRESHOLD * XP_PER_TRESHOLD
-
-    # Update latest msg data
-    def ExtendStreak(self, newTime: datetime.datetime, newLink: str) -> None:
-        self.lastTime = newTime
-        self.lastMsgLink = newLink
-
-    # Present streak as string
-    def PrintStreakRaport(self) -> str:
-        return f"{self.GetStreakStartDateString()} - {self.GetStreakLastDateString()} | {self.GetXpReward()}xp | Lasted {self.GetStreakDurationString()} from {self.begMsgLink} to {self.lastMsgLink}"
         
 
 class Raport:
@@ -314,9 +275,6 @@ class MyClient(discord.Client):
 
 # Process
 print("Booting up bot!")
-STREAK_LENGTH = 26 # in minutes
-STREAK_TRESHOLD = 60 # in minutes
-XP_PER_TRESHOLD = 100 # in minutes
 
 intents = discord.Intents.default()
 intents.message_content = True
