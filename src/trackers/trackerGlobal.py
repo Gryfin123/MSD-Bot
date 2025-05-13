@@ -26,14 +26,14 @@ class TrackerGlobal:
     def RequestRaport(self, server: discord.Guild, user: discord.User) -> Raport:
         result = self.findServer(server.id)
         if result == False:
-            return f"There are no noted messages sent by {user.global_name} in {server.name}"
+            return f"There are no noted messages sent by {user.name} in {server.name}"
         else:
             return result.RequestRaport(user)
         
     def CleanList(self, server: discord.guild, user: discord.User) -> str:
         result = self.findServer(server.id)
         if result == False:
-            return f"There are no noted messages sent by {user.global_name} in {server.name}"
+            return f"There are no noted messages sent by {user.name} in {server.name}"
         else:
             return result.CleanList(user)
         

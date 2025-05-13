@@ -40,7 +40,7 @@ class TrackerServer:
     def RequestRaport(self, user: discord.User) -> Raport:
         result = self.findUser(user.id)
         if result == False:
-            return f"There are no noted messages sent by {user.global_name}"
+            return f"There are no noted messages sent by {user.name}"
         else:
             return result.GetRaport()
         
@@ -53,7 +53,7 @@ class TrackerServer:
     def CleanList(self, user: discord.User) -> str:
         result = self.findUser(user.id)
         if result == False:
-            return f"There are no noted messages sent by {user.global_name}"
+            return f"There are no noted messages sent by {user.name}"
         else:
             result.CleanStreaks()
             return f"Past streaks have been removed."

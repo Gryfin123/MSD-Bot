@@ -37,7 +37,7 @@ class TrackerUser:
         if len(self.streakList) > 0:
             raport = Raport(self.streakList.copy(), self.user)
         else:
-            return f"There are no streaks for {self.user.global_name}"
+            return f"There are no streaks for {self.user.name}"
         # Clean streaks if setting for this is enabled
         if self.autoClean == True:
             self.CleanStreaks()
