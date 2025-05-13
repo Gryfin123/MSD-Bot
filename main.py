@@ -77,9 +77,6 @@ class MyClient(discord.Client):
 # Process
 print("Booting up bot!")
 
-intents = discord.Intents.default()
-intents.message_content = True
-
-client = MyClient(intents=intents)
+client = MyClient()
 token = getToken.GetToken()
 client.run(token)
