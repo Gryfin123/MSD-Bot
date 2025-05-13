@@ -16,6 +16,9 @@ class Raport:
             if streak.isValid() == True:
                 details += streak.PrintStreakRaport() + "\n"
         
+        if details == "":
+            details = "No valid streaks were found."
+
         return details
     
     def GetSummary(self) -> str:
