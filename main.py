@@ -23,7 +23,7 @@ class MyClient(discord.Client):
             > Currently implemented are following commands:
             > - `Angleotron raport`/`Ang raport` - presents all past streaks
             > - `Angleotron clean`/`Ang clean` - removes all past streaks
-            > - `Angleotron clean`/`Ang autoclean` - automatically removes all past streaks after requesting raport
+            > - `Angleotron autoclean`/`Ang autoclean` - automatically removes all past streaks after requesting raport
             > - `Angleotron listen`/`Ang listen` - makes the bot listen only to channels in specific category. If none is selected, listens to all of them.""")
             await message.channel.send(reply)
 
