@@ -46,7 +46,9 @@ class MyClient(discord.Client):
                 msgSent = await message.channel.send(raport.GetSummary(), file=discord.File(file, filename))
 
             # Then send command, if there is any xp to get
-            await message.channel.send(raport.GetRewardCommand(msgSent.jump_url))
+            xpCommand = raport.GetRewardCommand(msgSent.jump_url)
+            if xpCommand != 0:
+                await message.channel.send(xpCommand)
 
             # Delete original raport request sent by the user from the chat
             # and text file left in the folder

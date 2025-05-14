@@ -40,6 +40,9 @@ class Raport:
                 totalXp += streak.GetXpReward()
                 totalTime += streak.GetStreakDurationSeconds()
         
+        if totalXp == 0:
+            return ""
+
         totalTimeString = f"{(totalTime // 3600):02d}:{((totalTime % 3600) // 60):02d}:{(totalTime % 60):02d}"
         #totalTimeString = f"<t:{totalTime}:f>"
         return f"\nCommand: ```!xp +{totalXp} (RP: From <t:{firstStreakDate}:f>, during {totalTimeString} | Details: {sourceLink})```"
