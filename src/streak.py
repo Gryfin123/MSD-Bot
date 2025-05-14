@@ -47,4 +47,4 @@ class Streak:
 
     # Present streak as string
     def PrintStreakRaport(self) -> str:
-        return f"{self.GetStreakStartDateString()} - {self.GetStreakLastDateString()} (UTC)| {self.GetXpReward()}xp | Lasted {self.GetStreakDurationString()} from {self.begMsgLink} to {self.lastMsgLink}"
+        return f"{self.GetXpReward()}xp | Lasted {self.GetStreakDurationString()} | {self.GetStreakStartDateString()} - {self.GetStreakLastDateString()} (UTC)| From {self.begMsgLink} to {self.lastMsgLink}"
